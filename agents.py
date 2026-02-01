@@ -7,6 +7,7 @@ from langchain_core.prompts.chat import ChatPromptTemplate
 from langgraph.graph import START, StateGraph, END
 from langgraph.prebuilt import create_react_agent
 from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.pydantic_v1 import BaseModel, Field
 from prompt_library.prompt import system_prompt
 from utils.llms import LLMModel
 from toolkit.toolkits import *
@@ -14,6 +15,15 @@ from toolkit.toolkits import *
 class Router(TypedDict):
     next: Literal["information_node", "booking_node", "FINISH"]
     reasoning: str
+
+class RouterSchema(BaseModel):
+    """Router schema for structured output"""
+    next: Literal["information_node", "booking_node", "FINISH"] = Field(
+        description="The next node to route to"
+    )
+    reasoning: str = Field(
+        description="The reasoning for the routing decision"
+    )
 
 class AgentState(TypedDict):
     messages: Annotated[list[Any], add_messages]
@@ -47,7 +57,7 @@ class DoctorAppointmentAgent:
         print("************below is my query********************")    
         print(query)
         
-        response = self.llm_model.with_structured_output(Router).invoke(messages)
+        response = self.llm_model.with_structured_output(RouterSchema, method="json_schema").invoke(messages)
         
         goto = response["next"]
         
